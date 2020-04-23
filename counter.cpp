@@ -8,23 +8,24 @@ using namespace std;
 #define THREAD_NUM 2
 patterson_sync* sync_item;
 #elif LAMPORT
-#define THREAD_NUM 2
+#define THREAD_NUM 8
 lamport_sync* sync_item;
 #elif SIMPLE_SPIN
-#define THREAD_NUM 4
+#define THREAD_NUM 8
 char* spinlock;
 #elif OPT_SPIN
-#define THREAD_NUM 4
+#define THREAD_NUM 8
 spinlock_t* spinlock;
 #elif MUTEX
-#define THREAD_NUM 4
+#define THREAD_NUM 8
 int* mutexlock;
 #elif OPT_MUTEX
-#define THREAD_NUM 4
+#define THREAD_NUM 8
 mutexlock_t* mutexlock;
 #endif
 
-#define COUNTER_NUM 500000
+#define COUNTER_NUM 2000000
+long every_num;
 long counternum;
 
 typedef struct{
@@ -35,7 +36,7 @@ typedef struct{
 void* counter_patterson(void* param){
     threadParam_t* myparam = (threadParam_t*)param;
     int id = myparam->threadid;
-    for(int i = 0; i < COUNTER_NUM; i++){
+    for(int i = 0; i < every_num; i++){
         patterson_lock(sync_item, id);
         counternum++;
         patterson_unlock(sync_item, id);
@@ -45,7 +46,7 @@ void* counter_patterson(void* param){
 void* counter_lamport(void* param){
     threadParam_t* myparam = (threadParam_t*)param;
     int id = myparam->threadid;
-    for(int i = 0; i < COUNTER_NUM; i++){
+    for(int i = 0; i < every_num; i++){
         lamport_lock(sync_item, id);
         counternum++;
         lamport_unlock(sync_item, id);
@@ -55,7 +56,7 @@ void* counter_lamport(void* param){
 void* counter_spin(void* param){
     threadParam_t* myparam = (threadParam_t*)param;
     int id = myparam->threadid;
-    for(int i = 0; i < COUNTER_NUM; i++){
+    for(int i = 0; i < every_num; i++){
         simple_spin_lock(spinlock);
         counternum++;
         simple_spin_unlock(spinlock);
@@ -65,7 +66,7 @@ void* counter_spin(void* param){
 void* counter_optspin(void* param){
     threadParam_t* myparam = (threadParam_t*)param;
     int id = myparam->threadid;
-    for(int i = 0; i < COUNTER_NUM; i++){
+    for(int i = 0; i < every_num; i++){
         spin_lock(spinlock, id);
         counternum++;
         spin_unlock(spinlock, id);
@@ -75,7 +76,7 @@ void* counter_optspin(void* param){
 void* counter_mutex(void* param){
     threadParam_t* myparam = (threadParam_t*)param;
     int id = myparam->threadid;
-    for(int i = 0; i < COUNTER_NUM; i++){
+    for(int i = 0; i < every_num; i++){
         mutex_lock(mutexlock);
         counternum++;
         mutex_unlock(mutexlock);
@@ -85,7 +86,7 @@ void* counter_mutex(void* param){
 void* counter_optmutex(void* param){
     threadParam_t* myparam = (threadParam_t*)param;
     int id = myparam->threadid;
-    for(int i = 0; i < COUNTER_NUM; i++){
+    for(int i = 0; i < every_num; i++){
         optmutex_lock(mutexlock, id);
         counternum++;
         optmutex_unlock(mutexlock, id);
@@ -95,7 +96,7 @@ void* counter_optmutex(void* param){
 
 int main(){
     counternum=0;
-
+    every_num = COUNTER_NUM/THREAD_NUM;
     #ifdef PATTERSON
     sync_item = (patterson_sync*)malloc(sizeof(patterson_sync));
     patterson_init(sync_item);
@@ -118,6 +119,10 @@ int main(){
 
     pthread_t addthread[THREAD_NUM];
 	threadParam_t Tparam[THREAD_NUM]; 
+
+    struct timeval v1, v2; 
+	gettimeofday(&v1, NULL);
+
 	for (int i = 0; i < THREAD_NUM; i++){
 		Tparam[i].threadid = i;
         #ifdef PATTERSON
@@ -138,5 +143,9 @@ int main(){
     for (int i = 0; i < THREAD_NUM; i++)
 		pthread_join(addthread[i],NULL);
     
+    gettimeofday(&v2, NULL);
+	double time =  (v2.tv_sec - v1.tv_sec)*1000+(double)(v2.tv_usec - v1.tv_usec)/1000; // ms
+	cout<<"time ms: "<<time<<endl;
+
     cout<<"counter is "<<counternum<<endl;
 }

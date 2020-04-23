@@ -127,7 +127,7 @@ void optmutex_unlock(mutexlock_t* lock, int threadid){
 	    xchg(&lock->flag, 0); 
     else
 	    lock->waiting[other] = 0;
-    syscall(SYS_futex, lock, FUTEX_WAKE, 1, 0, 0, 0); // 唤醒一个线程
+    syscall(SYS_futex, lock, FUTEX_WAKE, lock->threadnum-1, 0, 0, 0); // 唤醒线程
 }
 void optmutex_init(mutexlock_t* lock, int threadnum){
     lock->threadnum = threadnum;
