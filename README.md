@@ -1,1 +1,2 @@
-thread sync implement, include lock, lamport and patterson. This project is second homework of parallel computing.
+## Thread synchronization mechanism implement
+spinlock, mutex lock, lamport baker and patterson
